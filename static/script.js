@@ -1,5 +1,6 @@
 // Get DOM elements
 const searchInput = document.getElementById('searchInput');
+const inlineCompletion = document.getElementById('inlineCompletion');
 const suggestionsContainer = document.getElementById('suggestionsContainer');
 const suggestionsList = document.getElementById('suggestionsList');
 const searchStats = document.getElementById('searchStats');
@@ -140,6 +141,19 @@ function displaySuggestions(suggestions) {
     // Show suggestions container
     suggestionsContainer.style.display = 'block';
 
+    // Inline query completion preview like Google
+    if (suggestions.length > 0 && searchInput.value.trim()) {
+        const firstText = suggestions[0].text;
+        const queryText = searchInput.value.trim();
+        if (firstText.toLowerCase().startsWith(queryText.toLowerCase()) && firstText.toLowerCase() !== queryText.toLowerCase()) {
+            inlineCompletion.textContent = firstText.substring(queryText.length);
+        } else {
+            inlineCompletion.textContent = '';
+        }
+    } else {
+        inlineCompletion.textContent = '';
+    }
+
     // Reset selected index
     selectedIndex = -1;
 }
@@ -235,7 +249,7 @@ function displaySearchResults(results, query) {
     clearSuggestions();
     resultsList.innerHTML = '';
     searchResults.classList.remove('hidden');
-    resultsHeader.textContent = `Search results for "${query}"`;
+    resultsHeader.textContent = `About ${results.length} results for "${query}"`;
 
     if (results.length === 0) {
         resultsList.innerHTML = `
@@ -251,13 +265,15 @@ function displaySearchResults(results, query) {
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
-            <div class="result-title">${result.text}</div>
+            <div class="result-title"><a href="${result.url}" target="_blank" rel="noopener">${result.title}</a></div>
+            <div class="result-url">${result.url}</div>
             <div class="result-category">${result.category} • ${result.match_type.replace('_', ' ')}</div>
-            <div class="result-description">${result.description}</div>
+            <div class="result-description">${result.snippet}</div>
+            <div class="result-source">${result.source}</div>
         `;
         card.addEventListener('click', () => {
-            searchInput.value = result.text;
-            fetchSearchResults(result.text);
+            searchInput.value = result.title;
+            fetchSearchResults(result.title);
             window.scrollTo({ top: card.offsetTop - 80, behavior: 'smooth' });
         });
         resultsList.appendChild(card);
@@ -330,6 +346,7 @@ function clearSuggestions() {
     searchStats.classList.remove('visible');
     currentSuggestions = [];
     selectedIndex = -1;
+    inlineCompletion.textContent = '';
 }
 
 /**

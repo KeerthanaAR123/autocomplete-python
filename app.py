@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import sqlite3
 import os
 import re
+import urllib.parse
 from collections import Counter
 
 app = Flask(__name__)
@@ -128,6 +129,67 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+
+def slugify(text):
+    """Return a URL-friendly slug for a given text."""
+    return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
+
+
+def get_best_source(name, category):
+    """Choose a realistic website based on the search topic."""
+    lower_name = name.lower()
+    category = category.lower()
+
+    if 'python' in lower_name or 'javascript' in lower_name or 'web development' in lower_name or 'css' in lower_name or 'html' in lower_name:
+        if 'tutorial' in lower_name or 'learn' in lower_name:
+            return 'https://www.w3schools.com', 'W3Schools'
+        return 'https://www.geeksforgeeks.org', 'GeeksforGeeks'
+
+    if 'react' in lower_name or 'angular' in lower_name or 'node' in lower_name or 'flask' in lower_name or 'django' in lower_name:
+        return 'https://www.geeksforgeeks.org', 'GeeksforGeeks'
+
+    if category == 'education' or 'course' in lower_name or 'certification' in lower_name:
+        return 'https://www.coursera.org', 'Coursera'
+
+    if category == 'health' or 'health' in lower_name or 'vaccine' in lower_name or 'weight' in lower_name:
+        return 'https://www.webmd.com', 'WebMD'
+
+    if category == 'travel' or 'flight' in lower_name or 'hotel' in lower_name or 'maps' in lower_name:
+        return 'https://www.booking.com', 'Booking.com'
+
+    if category == 'shopping' or 'deals' in lower_name or 'smartphones' in lower_name or 'laptop' in lower_name:
+        return 'https://www.amazon.com', 'Amazon'
+
+    if category == 'entertainment' or 'movie' in lower_name or 'music' in lower_name or 'netflix' in lower_name:
+        return 'https://www.imdb.com', 'IMDb'
+
+    if category == 'business' or 'stock' in lower_name or 'market' in lower_name:
+        return 'https://www.bloomberg.com', 'Bloomberg'
+
+    return 'https://www.wikipedia.org', 'Wikipedia'
+
+
+def generate_result_url(name, category):
+    """Generate a realistic-looking search result URL."""
+    base_url, _ = get_best_source(name, category)
+    slug = slugify(name)
+    if 'coursera.org' in base_url:
+        return f"{base_url}/search?query={urllib.parse.quote_plus(name)}"
+    if 'w3schools.com' in base_url:
+        return f"{base_url}/{slug}"
+    if 'geeksforgeeks.org' in base_url:
+        return f"{base_url}/{slug}/"
+    return f"{base_url}/{slug}"
+
+
+def generate_result_snippet(query, name, category):
+    """Generate a search snippet for a result."""
+    base_url, source = get_best_source(name, category)
+    if query.lower() in name.lower():
+        return f"{source} explains {name} with examples, code samples, and practical tips for {category.lower()} learners."
+    return f"Discover {name} on {source} with in-depth guides and expert resources for {category.lower()}."
+
 
 def get_db():
     """Create database connection"""
@@ -330,12 +392,16 @@ def results():
 
         if score > 0:
             score += product['popularity'] / 2
-            description = f"Category: {product['category']} · Popularity {product['popularity']}"
+            url = generate_result_url(name, product['category'])
+            source = get_best_source(name, product['category'])[1]
             scored_results.append({
                 'text': name,
+                'title': name,
+                'url': url,
+                'snippet': generate_result_snippet(query, name, product['category']),
+                'source': source,
                 'category': product['category'],
                 'match_type': match_type,
-                'description': description,
                 'score': score
             })
 
