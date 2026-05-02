@@ -3,6 +3,9 @@ const searchInput = document.getElementById('searchInput');
 const suggestionsContainer = document.getElementById('suggestionsContainer');
 const suggestionsList = document.getElementById('suggestionsList');
 const searchStats = document.getElementById('searchStats');
+const searchResults = document.getElementById('searchResults');
+const resultsHeader = document.getElementById('resultsHeader');
+const resultsList = document.getElementById('resultsList');
 const searchButton = document.getElementById('searchButton');
 const voiceButton = document.getElementById('voiceButton');
 
@@ -162,11 +165,8 @@ function selectSuggestion(suggestion) {
     searchInput.value = suggestion.text;
     clearSuggestions();
 
-    // Show selected item feedback
-    showSearchStats(`Searching for: ${suggestion.text}`, true);
-
-    // Here you could trigger a search or navigate to results
-    console.log('Selected:', suggestion);
+    // Show full search results for the selected suggestion
+    fetchSearchResults(suggestion.text);
 }
 
 /**
@@ -199,6 +199,96 @@ function showError() {
         </div>
     `;
     suggestionsContainer.style.display = 'block';
+}
+
+/**
+ * Fetch full search results
+ * @param {string} query - Search query string
+ */
+async function fetchSearchResults(query) {
+    if (!query.trim()) {
+        clearResults();
+        return;
+    }
+
+    try {
+        showResultsLoading();
+        const response = await fetch(`/results?q=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const results = await response.json();
+        displaySearchResults(results, query);
+    } catch (error) {
+        console.error('Error fetching search results:', error);
+        showResultsError();
+    }
+}
+
+/**
+ * Display full search results in the page
+ * @param {array} results - Array of result objects
+ * @param {string} query - Search query string
+ */
+function displaySearchResults(results, query) {
+    clearSuggestions();
+    resultsList.innerHTML = '';
+    searchResults.classList.remove('hidden');
+    resultsHeader.textContent = `Search results for "${query}"`;
+
+    if (results.length === 0) {
+        resultsList.innerHTML = `
+            <div class="result-card no-results-card">
+                <div class="result-title">No results found</div>
+                <div class="result-description">Try another query or simplify your search terms.</div>
+            </div>
+        `;
+        return;
+    }
+
+    results.forEach((result) => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `
+            <div class="result-title">${result.text}</div>
+            <div class="result-category">${result.category} • ${result.match_type.replace('_', ' ')}</div>
+            <div class="result-description">${result.description}</div>
+        `;
+        card.addEventListener('click', () => {
+            searchInput.value = result.text;
+            fetchSearchResults(result.text);
+            window.scrollTo({ top: card.offsetTop - 80, behavior: 'smooth' });
+        });
+        resultsList.appendChild(card);
+    });
+}
+
+function showResultsLoading() {
+    searchResults.classList.remove('hidden');
+    resultsHeader.textContent = 'Searching...';
+    resultsList.innerHTML = `
+        <div class="result-card loading">
+            <div class="result-title">Loading search results...</div>
+            <div class="result-description">Finding matches for your query.</div>
+        </div>
+    `;
+}
+
+function showResultsError() {
+    searchResults.classList.remove('hidden');
+    resultsHeader.textContent = 'Search error';
+    resultsList.innerHTML = `
+        <div class="result-card no-results-card">
+            <div class="result-title">Unable to load results</div>
+            <div class="result-description">Please try again later.</div>
+        </div>
+    `;
+}
+
+function clearResults() {
+    resultsList.innerHTML = '';
+    searchResults.classList.add('hidden');
 }
 
 /**
@@ -310,11 +400,9 @@ searchInput.addEventListener('keydown', (event) => {
             if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
                 selectSuggestion(currentSuggestions[selectedIndex]);
             } else {
-                // Perform search with current input
                 const query = searchInput.value.trim();
                 if (query) {
-                    showSearchStats(`Searching for: ${query}`, true);
-                    clearSuggestions();
+                    fetchSearchResults(query);
                 }
             }
             break;
@@ -329,8 +417,7 @@ searchInput.addEventListener('keydown', (event) => {
 searchButton.addEventListener('click', () => {
     const query = searchInput.value.trim();
     if (query) {
-        showSearchStats(`Searching for: ${query}`, true);
-        clearSuggestions();
+        fetchSearchResults(query);
     }
 });
 
