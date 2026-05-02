@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Information Retrieval Autocomplete</title>
+    <title>Information Retrieval Autocomplete</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,8 +11,8 @@
         <div class="brand">
             <div class="logo-icon">QS</div>
             <div>
-<h1>Information Retrieval Autocomplete</h1>
-                <p>Type a few letters to see ranked search suggestions.</p>
+                <h1>Information Retrieval Autocomplete</h1>
+                <p>Type a few words to see search suggestions, ranked results, and website links.</p>
             </div>
         </div>
 
@@ -31,6 +31,7 @@
             <div id="suggestionsContainer" class="suggestions-container hidden"></div>
             <div id="stats" class="stats hidden"></div>
             <div id="noResults" class="no-results hidden">No results found</div>
+            <div id="resultsContainer" class="results-container hidden"></div>
         </div>
     </div>
 
