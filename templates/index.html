@@ -3,27 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IR Autocomplete Demo</title>
+<title>Information Retrieval Autocomplete</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="app-shell">
-        <h1>Information Retrieval Autocomplete</h1>
-        <p>Type a few letters to see ranked search suggestions.</p>
-
-        <div class="autocomplete-wrapper">
-            <input
-                type="text"
-                id="searchInput"
-                class="search-input"
-                placeholder="Search queries..."
-                autocomplete="off"
-                spellcheck="false"
-            />
-            <div id="suggestionsContainer" class="suggestions-container hidden"></div>
+        <div class="brand">
+            <div class="logo-icon">QS</div>
+            <div>
+<h1>Information Retrieval Autocomplete</h1>
+                <p>Type a few letters to see ranked search suggestions.</p>
+            </div>
         </div>
 
-        <div id="noResults" class="no-results hidden">No results found</div>
+        <div class="autocomplete-wrapper">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="Start typing your query..."
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+            <div id="suggestionsContainer" class="suggestions-container hidden"></div>
+            <div id="stats" class="stats hidden"></div>
+            <div id="noResults" class="no-results hidden">No results found</div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

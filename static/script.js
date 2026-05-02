@@ -1,5 +1,6 @@
 const searchInput = document.getElementById('searchInput');
 const suggestionsContainer = document.getElementById('suggestionsContainer');
+const stats = document.getElementById('stats');
 const noResults = document.getElementById('noResults');
 let debounceTimer;
 const DEBOUNCE_DELAY = 300;
@@ -28,11 +29,13 @@ function renderSuggestions(suggestions, query) {
     suggestionsContainer.innerHTML = '';
     if (suggestions.length === 0) {
         showNoResults();
+        updateStats(0);
         return;
     }
 
     noResults.classList.add('hidden');
     suggestionsContainer.classList.remove('hidden');
+    updateStats(suggestions.length);
 
     suggestions.forEach((text) => {
         const item = document.createElement('div');
@@ -46,8 +49,17 @@ function renderSuggestions(suggestions, query) {
     });
 }
 
+function updateStats(count) {
+    if (count > 0) {
+        stats.textContent = `Showing ${count} suggestion${count > 1 ? 's' : ''}`;
+        stats.classList.remove('hidden');
+    } else {
+        stats.classList.add('hidden');
+    }
+}
+
 function highlightPrefix(text, query) {
-    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
     const regex = new RegExp(`^(${escaped})`, 'i');
     const highlighted = text.replace(regex, '<strong>$1</strong>');
     return `<span class="suggestion-text">${highlighted}</span>`;
@@ -57,6 +69,7 @@ function clearSuggestions() {
     suggestionsContainer.innerHTML = '';
     suggestionsContainer.classList.add('hidden');
     noResults.classList.add('hidden');
+    updateStats(0);
 }
 
 function showNoResults() {
