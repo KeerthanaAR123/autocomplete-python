@@ -1,0 +1,196 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body and general styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Main container */
+.container {
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Search container */
+.search-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Heading */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+/* Input wrapper - relative positioning for dropdown */
+.input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* Search input styling */
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+/* Input focus state */
+.search-input:focus {
+    border-color: #667eea;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Input placeholder */
+.search-input::placeholder {
+    color: #999;
+}
+
+/* Suggestions list styling */
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+/* Individual suggestion item */
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Last item - no border bottom */
+.suggestion-item:last-child {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Hover effect on suggestions */
+.suggestion-item:hover {
+    background-color: #667eea;
+    color: white;
+    padding-left: 20px;
+}
+
+/* No results message */
+.no-results {
+    padding: 12px 16px;
+    color: #999;
+    text-align: center;
+    font-style: italic;
+    background-color: #f5f5f5;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Selected item display */
+.selected-item {
+    text-align: center;
+    padding: 12px;
+    min-height: 20px;
+    color: #667eea;
+    font-weight: 500;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Empty state */
+.selected-item:empty {
+    display: none;
+}
+
+/* Scrollbar styling for suggestions */
+.suggestions-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.suggestions-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .search-container {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+
+    .search-input {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .suggestion-item {
+        padding: 10px 14px;
+    }
+}
