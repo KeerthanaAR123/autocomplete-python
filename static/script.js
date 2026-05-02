@@ -1,466 +1,86 @@
-// Get DOM elements
 const searchInput = document.getElementById('searchInput');
-const inlineCompletion = document.getElementById('inlineCompletion');
 const suggestionsContainer = document.getElementById('suggestionsContainer');
-const suggestionsList = document.getElementById('suggestionsList');
-const searchStats = document.getElementById('searchStats');
-const searchResults = document.getElementById('searchResults');
-const resultsHeader = document.getElementById('resultsHeader');
-const resultsList = document.getElementById('resultsList');
-const searchButton = document.getElementById('searchButton');
-const voiceButton = document.getElementById('voiceButton');
-
-// Debouncing variables
+const noResults = document.getElementById('noResults');
 let debounceTimer;
-const DEBOUNCE_DELAY = 150; // Faster response like Google
+const DEBOUNCE_DELAY = 300;
 
-// Current suggestions data
-let currentSuggestions = [];
-let selectedIndex = -1;
-
-/**
- * Get icon for suggestion type
- * @param {string} type - Suggestion type
- * @returns {string} Material icon name
- */
-function getSuggestionIcon(type) {
-    const icons = {
-        'prefix': 'search',
-        'word_match': 'match_word',
-        'substring': 'find_in_page',
-        'fuzzy': 'blur_on',
-        'category': 'category',
-        'popular': 'trending_up'
-    };
-    return icons[type] || 'search';
-}
-
-/**
- * Get color class for suggestion type
- * @param {string} type - Suggestion type
- * @returns {string} CSS class name
- */
-function getSuggestionClass(type) {
-    return `suggestion-icon ${type}`;
-}
-
-/**
- * Fetch suggestions from the backend API
- * @param {string} query - Search query string
- */
 async function fetchSuggestions(query) {
-    // If query is empty, clear suggestions
     if (!query.trim()) {
         clearSuggestions();
         return;
     }
 
     try {
-        // Show loading state
-        showLoading();
-
-        // Fetch data from /search endpoint
         const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
-
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error('Network error');
         }
 
-        // Parse JSON response
         const suggestions = await response.json();
-
-        // Store current suggestions
-        currentSuggestions = suggestions;
-
-        // Display suggestions
-        displaySuggestions(suggestions);
-
-        // Update search stats
-        updateSearchStats(suggestions.length, query);
-
+        renderSuggestions(suggestions, query);
     } catch (error) {
-        console.error('Error fetching suggestions:', error);
+        console.error(error);
         clearSuggestions();
-        showError();
     }
 }
 
-/**
- * Display suggestions in the dropdown list
- * @param {array} suggestions - Array of suggestion objects
- */
-function displaySuggestions(suggestions) {
-    // Clear previous suggestions
-    suggestionsList.innerHTML = '';
-
-    // If no results, show "No results" message
+function renderSuggestions(suggestions, query) {
+    suggestionsContainer.innerHTML = '';
     if (suggestions.length === 0) {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item no-results';
-        div.innerHTML = `
-            <div class="suggestion-content">
-                <div class="suggestion-text">No results found for "${searchInput.value}"</div>
-                <div class="suggestion-category">Try different keywords</div>
-            </div>
-        `;
-        suggestionsList.appendChild(div);
-        suggestionsContainer.style.display = 'block';
+        showNoResults();
         return;
     }
 
-    // Create suggestion items
-    suggestions.forEach((suggestion, index) => {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        div.dataset.index = index;
+    noResults.classList.add('hidden');
+    suggestionsContainer.classList.remove('hidden');
 
-        const iconName = getSuggestionIcon(suggestion.type);
-        const iconClass = getSuggestionClass(suggestion.type);
-
-        div.innerHTML = `
-            <span class="material-icons ${iconClass}">${iconName}</span>
-            <div class="suggestion-content">
-                <div class="suggestion-text">${highlightMatch(suggestion.text, searchInput.value)}</div>
-                <div class="suggestion-category">${suggestion.category}</div>
-            </div>
-        `;
-
-        // Add click event
-        div.addEventListener('click', () => {
-            selectSuggestion(suggestion);
+    suggestions.forEach((text) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.innerHTML = highlightPrefix(text, query);
+        item.addEventListener('click', () => {
+            searchInput.value = text;
+            clearSuggestions();
         });
-
-        // Add mouseover event for keyboard navigation
-        div.addEventListener('mouseover', () => {
-            setSelectedIndex(index);
-        });
-
-        suggestionsList.appendChild(div);
-    });
-
-    // Show suggestions container
-    suggestionsContainer.style.display = 'block';
-
-    // Inline query completion preview like Google
-    if (suggestions.length > 0 && searchInput.value.trim()) {
-        const firstText = suggestions[0].text;
-        const queryText = searchInput.value.trim();
-        if (firstText.toLowerCase().startsWith(queryText.toLowerCase()) && firstText.toLowerCase() !== queryText.toLowerCase()) {
-            inlineCompletion.textContent = firstText.substring(queryText.length);
-        } else {
-            inlineCompletion.textContent = '';
-        }
-    } else {
-        inlineCompletion.textContent = '';
-    }
-
-    // Reset selected index
-    selectedIndex = -1;
-}
-
-/**
- * Highlight matching text in suggestion
- * @param {string} text - Full suggestion text
- * @param {string} query - Search query
- * @returns {string} HTML with highlighted matches
- */
-function highlightMatch(text, query) {
-    if (!query) return text;
-
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<strong>$1</strong>');
-}
-
-/**
- * Select a suggestion
- * @param {object} suggestion - Selected suggestion object
- */
-function selectSuggestion(suggestion) {
-    searchInput.value = suggestion.text;
-    clearSuggestions();
-
-    // Show full search results for the selected suggestion
-    fetchSearchResults(suggestion.text);
-}
-
-/**
- * Show loading state
- */
-function showLoading() {
-    suggestionsList.innerHTML = `
-        <div class="suggestion-item loading">
-            <span class="material-icons suggestion-icon">hourglass_empty</span>
-            <div class="suggestion-content">
-                <div class="suggestion-text">Searching...</div>
-                <div class="suggestion-category">Finding the best matches</div>
-            </div>
-        </div>
-    `;
-    suggestionsContainer.style.display = 'block';
-}
-
-/**
- * Show error state
- */
-function showError() {
-    suggestionsList.innerHTML = `
-        <div class="suggestion-item no-results">
-            <span class="material-icons suggestion-icon">error</span>
-            <div class="suggestion-content">
-                <div class="suggestion-text">Search temporarily unavailable</div>
-                <div class="suggestion-category">Please try again later</div>
-            </div>
-        </div>
-    `;
-    suggestionsContainer.style.display = 'block';
-}
-
-/**
- * Fetch full search results
- * @param {string} query - Search query string
- */
-async function fetchSearchResults(query) {
-    if (!query.trim()) {
-        clearResults();
-        return;
-    }
-
-    try {
-        showResultsLoading();
-        const response = await fetch(`/results?q=${encodeURIComponent(query)}`);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const results = await response.json();
-        displaySearchResults(results, query);
-    } catch (error) {
-        console.error('Error fetching search results:', error);
-        showResultsError();
-    }
-}
-
-/**
- * Display full search results in the page
- * @param {array} results - Array of result objects
- * @param {string} query - Search query string
- */
-function displaySearchResults(results, query) {
-    clearSuggestions();
-    resultsList.innerHTML = '';
-    searchResults.classList.remove('hidden');
-    resultsHeader.textContent = `About ${results.length} results for "${query}"`;
-
-    if (results.length === 0) {
-        resultsList.innerHTML = `
-            <div class="result-card no-results-card">
-                <div class="result-title">No results found</div>
-                <div class="result-description">Try another query or simplify your search terms.</div>
-            </div>
-        `;
-        return;
-    }
-
-    results.forEach((result) => {
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.innerHTML = `
-            <div class="result-title"><a href="${result.url}" target="_blank" rel="noopener">${result.title}</a></div>
-            <div class="result-url">${result.url}</div>
-            <div class="result-category">${result.category} • ${result.match_type.replace('_', ' ')}</div>
-            <div class="result-description">${result.snippet}</div>
-            <div class="result-source">${result.source}</div>
-        `;
-        card.addEventListener('click', () => {
-            searchInput.value = result.title;
-            fetchSearchResults(result.title);
-            window.scrollTo({ top: card.offsetTop - 80, behavior: 'smooth' });
-        });
-        resultsList.appendChild(card);
+        suggestionsContainer.appendChild(item);
     });
 }
 
-function showResultsLoading() {
-    searchResults.classList.remove('hidden');
-    resultsHeader.textContent = 'Searching...';
-    resultsList.innerHTML = `
-        <div class="result-card loading">
-            <div class="result-title">Loading search results...</div>
-            <div class="result-description">Finding matches for your query.</div>
-        </div>
-    `;
+function highlightPrefix(text, query) {
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`^(${escaped})`, 'i');
+    const highlighted = text.replace(regex, '<strong>$1</strong>');
+    return `<span class="suggestion-text">${highlighted}</span>`;
 }
 
-function showResultsError() {
-    searchResults.classList.remove('hidden');
-    resultsHeader.textContent = 'Search error';
-    resultsList.innerHTML = `
-        <div class="result-card no-results-card">
-            <div class="result-title">Unable to load results</div>
-            <div class="result-description">Please try again later.</div>
-        </div>
-    `;
-}
-
-function clearResults() {
-    resultsList.innerHTML = '';
-    searchResults.classList.add('hidden');
-}
-
-/**
- * Update search statistics
- * @param {number} count - Number of suggestions
- * @param {string} query - Search query
- */
-function updateSearchStats(count, query) {
-    if (count > 0) {
-        searchStats.textContent = `About ${count} suggestion${count !== 1 ? 's' : ''} for "${query}"`;
-        searchStats.classList.add('visible');
-    } else {
-        searchStats.classList.remove('visible');
-    }
-}
-
-/**
- * Show search stats with custom message
- * @param {string} message - Message to display
- * @param {boolean} temporary - Whether to hide after delay
- */
-function showSearchStats(message, temporary = false) {
-    searchStats.textContent = message;
-    searchStats.classList.add('visible');
-
-    if (temporary) {
-        setTimeout(() => {
-            searchStats.classList.remove('visible');
-        }, 3000);
-    }
-}
-
-/**
- * Clear all suggestions
- */
 function clearSuggestions() {
-    suggestionsList.innerHTML = '';
-    suggestionsContainer.style.display = 'none';
-    searchStats.classList.remove('visible');
-    currentSuggestions = [];
-    selectedIndex = -1;
-    inlineCompletion.textContent = '';
+    suggestionsContainer.innerHTML = '';
+    suggestionsContainer.classList.add('hidden');
+    noResults.classList.add('hidden');
 }
 
-/**
- * Set selected suggestion index for keyboard navigation
- * @param {number} index - Index of selected suggestion
- */
-function setSelectedIndex(index) {
-    // Remove previous selection
-    const previousSelected = suggestionsList.querySelector('.selected');
-    if (previousSelected) {
-        previousSelected.classList.remove('selected');
-    }
-
-    // Add new selection
-    if (index >= 0 && index < currentSuggestions.length) {
-        const selectedItem = suggestionsList.children[index];
-        if (selectedItem) {
-            selectedItem.classList.add('selected');
-            selectedIndex = index;
-        }
-    } else {
-        selectedIndex = -1;
-    }
+function showNoResults() {
+    suggestionsContainer.innerHTML = '';
+    suggestionsContainer.classList.add('hidden');
+    noResults.classList.remove('hidden');
 }
 
-/**
- * Debounced search - delays API call until user stops typing
- */
-function debouncedSearch() {
-    // Clear previous timer
+function handleInput() {
     clearTimeout(debounceTimer);
-
-    // Set new timer to call fetchSuggestions after DEBOUNCE_DELAY
     debounceTimer = setTimeout(() => {
-        const query = searchInput.value.trim();
-        fetchSuggestions(query);
+        fetchSuggestions(searchInput.value);
     }, DEBOUNCE_DELAY);
 }
 
-// Event Listeners
-
-// Input event for search
-searchInput.addEventListener('input', debouncedSearch);
-
-// Focus event to show suggestions if there's a value
+searchInput.addEventListener('input', handleInput);
 searchInput.addEventListener('focus', () => {
-    const query = searchInput.value.trim();
-    if (query) {
-        fetchSuggestions(query);
+    if (searchInput.value.trim()) {
+        fetchSuggestions(searchInput.value);
     }
 });
 
-// Keyboard navigation
-searchInput.addEventListener('keydown', (event) => {
-    if (currentSuggestions.length === 0) return;
-
-    switch (event.key) {
-        case 'ArrowDown':
-            event.preventDefault();
-            setSelectedIndex(selectedIndex + 1);
-            break;
-        case 'ArrowUp':
-            event.preventDefault();
-            setSelectedIndex(selectedIndex - 1);
-            break;
-        case 'Enter':
-            event.preventDefault();
-            if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
-                selectSuggestion(currentSuggestions[selectedIndex]);
-            } else {
-                const query = searchInput.value.trim();
-                if (query) {
-                    fetchSearchResults(query);
-                }
-            }
-            break;
-        case 'Escape':
-            clearSuggestions();
-            searchInput.blur();
-            break;
-    }
-});
-
-// Search button click
-searchButton.addEventListener('click', () => {
-    const query = searchInput.value.trim();
-    if (query) {
-        fetchSearchResults(query);
-    }
-});
-
-// Voice button click (placeholder)
-voiceButton.addEventListener('click', () => {
-    // In a real implementation, this would trigger voice recognition
-    alert('Voice search coming soon!');
-});
-
-// Close suggestions when clicking outside
 document.addEventListener('click', (event) => {
-    if (!event.target.closest('.search-box-container')) {
+    if (!event.target.closest('.autocomplete-wrapper')) {
         clearSuggestions();
     }
 });
-
-// Handle window resize for responsive behavior
-window.addEventListener('resize', () => {
-    // Close suggestions on mobile when resizing
-    if (window.innerWidth < 768) {
-        clearSuggestions();
-    }
-});
-
-// Initialize - focus on search input
-document.addEventListener('DOMContentLoaded', () => {
-    searchInput.focus();
-});
-

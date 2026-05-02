@@ -3,104 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Search - Auto-Complete Engine</title>
-    <!-- Link CSS file from static folder -->
+    <title>IR Autocomplete Demo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- Google Fonts for better typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
-    <div class="search-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <span class="material-icons">search</span>
-                <span class="logo-text">SmartSearch</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#" class="nav-link">Images</a>
-                <a href="#" class="nav-link">Videos</a>
-                <a href="#" class="nav-link">Maps</a>
-                <a href="#" class="nav-link">News</a>
-            </nav>
-        </header>
+    <div class="app-shell">
+        <h1>Information Retrieval Autocomplete</h1>
+        <p>Type a few letters to see ranked search suggestions.</p>
 
-        <!-- Main Search Section -->
-        <main class="main-content">
-            <div class="search-box-container">
-                <!-- Search Icon -->
-                <div class="search-icon">
-                    <span class="material-icons">search</span>
-                </div>
+        <div class="autocomplete-wrapper">
+            <input
+                type="text"
+                id="searchInput"
+                class="search-input"
+                placeholder="Search queries..."
+                autocomplete="off"
+                spellcheck="false"
+            />
+            <div id="suggestionsContainer" class="suggestions-container hidden"></div>
+        </div>
 
-                <!-- Inline Completion Preview -->
-                <span id="inlineCompletion" class="inline-completion"></span>
-
-                <!-- Search Input -->
-                <input
-                    type="text"
-                    id="searchInput"
-                    class="search-input"
-                    placeholder="Search for anything..."
-                    autocomplete="off"
-                    spellcheck="false"
-                >
-
-                <!-- Voice Search Button -->
-                <button class="voice-button" id="voiceButton">
-                    <span class="material-icons">mic</span>
-                </button>
-
-                <!-- Search Button -->
-                <button class="search-button" id="searchButton">
-                    <span class="material-icons">search</span>
-                </button>
-
-                <!-- Suggestions Dropdown -->
-                <div id="suggestionsContainer" class="suggestions-container">
-                    <div id="suggestionsList" class="suggestions-list"></div>
-                </div>
-            </div>
-
-            <!-- Search Stats -->
-            <div id="searchStats" class="search-stats"></div>
-
-            <!-- Search Results -->
-            <div id="searchResults" class="search-results hidden">
-                <div id="resultsHeader" class="results-header"></div>
-                <div id="resultsList" class="results-list"></div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Popular Searches</h4>
-                    <div class="trending-tags">
-                        <span class="tag">Python</span>
-                        <span class="tag">JavaScript</span>
-                        <span class="tag">React</span>
-                        <span class="tag">Machine Learning</span>
-                        <span class="tag">Web Development</span>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h4>Categories</h4>
-                    <div class="category-links">
-                        <a href="#" class="category-link">Technology</a>
-                        <a href="#" class="category-link">Food</a>
-                        <a href="#" class="category-link">Shopping</a>
-                        <a href="#" class="category-link">Travel</a>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        <div id="noResults" class="no-results hidden">No results found</div>
     </div>
 
-    <!-- Link JavaScript file from static folder -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
